@@ -35,8 +35,10 @@ class GFEmailTemplatesAddOn extends GFAddOn
     public function init()
     {
         parent::init();
-        add_filter('gform_submit_button', [$this, 'form_submit_button'], 10, 2);
-        add_action('gform_after_submission', [$this, 'after_submission'], 10, 2);
+        add_filter('gform_tooltips', [$this, 'add_extra_tooltips']);
+        add_filter('gform_notification_ui_settings', [$this, 'notification_extra_settings'], 10, 3);
+        add_action('gform_pre_notification_save', [$this, 'save_extra_settings'], 10, 2);
+        add_filter('gform_notification', [$this, 'notification_extras'], 5, 3);
     }
 
 
@@ -79,6 +81,47 @@ class GFEmailTemplatesAddOn extends GFAddOn
     public function plugin_page()
     {
         echo 'This page appears in the Forms menu';
+    }
+
+    function add_extra_tooltips($tooltips)
+    {
+        $tooltips['email_template'] = "<h6>" . __("Email template",
+                "gravityforms") . "</h6>" . __("Optional ability to choose an email template.", "gravityforms");
+
+        return $tooltips;
+    }
+
+    function notification_extra_settings($ui_settings, $notification, $form)
+    {
+        $emailTemplate                    = (rgar($notification, 'emailTemplate'));
+        $ui_settings['enableAttachments'] = '
+            <tr>
+                <th><label for="email_template">' . __("Email Template", "gravityforms") . ' ' .
+            gform_tooltip("email_template", "", true) . '</label></th>
+                <td>
+                    <select type="checkbox" id="email_template" name="email_template">
+                        <option value="">' . __('No template', 'gravityforms') . '</option>
+                    </select>
+                </td>
+            </tr>';
+
+        return $ui_settings;
+    }
+
+    function save_extra_settings($notification, $form)
+    {
+        $notification['email_template'] = rgpost('email_template');
+
+        return $notification;
+    }
+
+    function notification_extras($notification, $form, $entry)
+    {
+        if (rgar($notification, 'email_template')) {
+            GFCommon::log_debug('GFEmailTemplatesAddOn - apply the notification email template');
+        }
+
+        return $notification;
     }
 
 
