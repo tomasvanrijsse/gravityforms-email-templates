@@ -12,6 +12,8 @@ class GFEmailTemplatesAddOn extends GFAddOn
     protected $_full_path                = __FILE__;
     protected $_title                    = 'Gravity Forms HTML Email Notification Templates Add-On';
     protected $_short_title              = 'Email Templates Add-On';
+    /** @var GFEmailTemplate[] */
+    protected $templates = [];
 
     private static $_instance = null;
 
@@ -39,6 +41,21 @@ class GFEmailTemplatesAddOn extends GFAddOn
         add_filter('gform_notification_ui_settings', [$this, 'notification_extra_settings'], 10, 3);
         add_action('gform_pre_notification_save', [$this, 'save_extra_settings'], 10, 2);
         add_filter('gform_notification', [$this, 'notification_extras'], 5, 3);
+
+        include 'GFEmailTemplate.php';
+        include 'templates/NoTemplate.php';
+        include 'templates/BasicTemplate.php';
+
+        $this->templates = apply_filters('gform_email_templates', [
+            'none'  => new NoTemplate(),
+            'basic' => new BasicTemplate()
+        ]);
+
+        foreach ($this->templates as $key => $template) {
+            if (!is_subclass_of($template, GFEmailTemplate::class)) {
+                throw new Exception('Template ' . $key . ' is not of type GFEmailTemplate');
+            }
+        }
     }
 
 
@@ -93,15 +110,22 @@ class GFEmailTemplatesAddOn extends GFAddOn
 
     function notification_extra_settings($ui_settings, $notification, $form)
     {
-        $emailTemplate                    = (rgar($notification, 'emailTemplate'));
+        $activeEmailTemplate = (rgar($notification, 'email_template'));
+        $options       = '';
+        foreach ($this->templates as $key => $template) {
+            $state = '';
+            if($activeEmailTemplate == $key){
+                $state = 'selected';
+            }
+            $options .= "<option value='$key' $state>" . $template->getTitle() . '</option>';
+        }
+
         $ui_settings['enableAttachments'] = '
             <tr>
                 <th><label for="email_template">' . __("Email Template", "gravityforms") . ' ' .
             gform_tooltip("email_template", "", true) . '</label></th>
                 <td>
-                    <select type="checkbox" id="email_template" name="email_template">
-                        <option value="">' . __('No template', 'gravityforms') . '</option>
-                    </select>
+                    <select type="checkbox" id="email_template" name="email_template">' . $options . '</select>
                 </td>
             </tr>';
 
