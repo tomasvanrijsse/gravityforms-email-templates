@@ -55,6 +55,8 @@ class GFEmailTemplatesAddOn extends GFAddOn
             if (!is_subclass_of($template, GFEmailTemplate::class)) {
                 throw new Exception('Template ' . $key . ' is not of type GFEmailTemplate');
             }
+
+            add_filter('gform_email_template_notification_' . $key, [get_class($template), 'notificationFilter'], 10 , 3);
         }
     }
 
@@ -111,10 +113,10 @@ class GFEmailTemplatesAddOn extends GFAddOn
     function notification_extra_settings($ui_settings, $notification, $form)
     {
         $activeEmailTemplate = (rgar($notification, 'email_template'));
-        $options       = '';
+        $options             = '';
         foreach ($this->templates as $key => $template) {
             $state = '';
-            if($activeEmailTemplate == $key){
+            if ($activeEmailTemplate == $key) {
                 $state = 'selected';
             }
             $options .= "<option value='$key' $state>" . $template->getTitle() . '</option>';
@@ -141,8 +143,19 @@ class GFEmailTemplatesAddOn extends GFAddOn
 
     function notification_extras($notification, $form, $entry)
     {
-        if (rgar($notification, 'email_template')) {
-            GFCommon::log_debug('GFEmailTemplatesAddOn - apply the notification email template');
+        $template = rgar($notification, 'email_template');
+        if ($template) {
+
+            if (!array_key_exists($template, $this->templates)) {
+                GFCommon::log_debug("GFEmailTemplatesAddOn - the template `$template` couldn't be found");
+
+                return $notification;
+            }
+
+            $notification =
+                apply_filters('gform_email_template_notification_' . $template, $notification, $form, $entry);
+
+            GFCommon::log_debug("GFEmailTemplatesAddOn - apply the `$template` notification email template");
         }
 
         return $notification;

@@ -25,12 +25,15 @@ class NoTemplate extends GFEmailTemplate
     }
 
     /**
-     * Return the merged fields and email template ready to be send.
-     * @param array $fields
-     * @return string
+     * Return the $notification with the `message` property updated and ready to be send.
+     * @param $notification
+     * @param $form
+     * @param $entry
+     * @return array $notifications
      */
-    function getHtmlBody(array $fields): string
+    static function notificationFilter($notification, $form, $entry): array
     {
-        return $fields['message'];
+        // leave $notification['message'] untouched
+        return $notification;
     }
 }

@@ -17,10 +17,12 @@ abstract class GFEmailTemplate
     abstract function getFields(): array;
 
     /**
-     * Return the merged fields and email template ready to be send.
-     * @param array $fields
-     * @return string
+     * Return the $notification with the `message` property updated and ready to be send.
+     * @param $notification
+     * @param $form
+     * @param $entry
+     * @return array $notifications
      */
-    abstract function getHtmlBody(array $fields): string;
+    abstract static function notificationFilter($notification, $form, $entry): array;
 
 }
