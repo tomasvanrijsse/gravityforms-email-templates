@@ -144,6 +144,13 @@ class GFEmailTemplatesAddOn extends GFAddOn
     function notification_extras($notification, $form, $entry)
     {
         $template = rgar($notification, 'email_template');
+        
+        $defaultTemplate = apply_filters('gform_email_default_template', null);
+        
+        if(!$template && $defaultTemplate !== null){
+            $template = $defaultTemplate;
+        }
+        
         if ($template) {
 
             if (!array_key_exists($template, $this->templates)) {
